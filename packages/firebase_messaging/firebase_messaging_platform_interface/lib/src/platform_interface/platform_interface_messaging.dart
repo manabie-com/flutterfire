@@ -1,4 +1,3 @@
-// ignore_for_file: require_trailing_commas
 // Copyright 2020, the Chromium project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
@@ -14,24 +13,12 @@ import '../method_channel/method_channel_messaging.dart';
 
 /// Defines an interface to work with Messaging on web and mobile.
 abstract class FirebaseMessagingPlatform extends PlatformInterface {
-  /// Create an instance using [app].
-  FirebaseMessagingPlatform({this.appInstance}) : super(token: _token);
-
-  /// Create an instance with a [FirebaseApp] using an existing instance.
-  factory FirebaseMessagingPlatform.instanceFor({
-    required FirebaseApp app,
-    required Map<dynamic, dynamic> pluginConstants,
-  }) {
-    return FirebaseMessagingPlatform.instance
-        .delegateFor(app: app)
-        .setInitialValues(
-          isAutoInitEnabled: pluginConstants['AUTO_INIT_ENABLED'],
-        );
-  }
-
   /// The [FirebaseApp] this instance was initialized with.
   @protected
   final FirebaseApp? appInstance;
+
+  /// Create an instance using [app].
+  FirebaseMessagingPlatform({this.appInstance}) : super(token: _token);
 
   /// Returns the [FirebaseApp] for the current instance.
   FirebaseApp get app {
@@ -43,6 +30,17 @@ abstract class FirebaseMessagingPlatform extends PlatformInterface {
   }
 
   static final Object _token = Object();
+
+  /// Create an instance with a [FirebaseApp] using an existing instance.
+  factory FirebaseMessagingPlatform.instanceFor(
+      {required FirebaseApp app,
+      required Map<dynamic, dynamic> pluginConstants}) {
+    return FirebaseMessagingPlatform.instance
+        .delegateFor(app: app)
+        .setInitialValues(
+          isAutoInitEnabled: pluginConstants['AUTO_INIT_ENABLED'],
+        );
+  }
 
   static FirebaseMessagingPlatform? _instance;
 
@@ -60,14 +58,21 @@ abstract class FirebaseMessagingPlatform extends PlatformInterface {
     _instance = instance;
   }
 
+  // ignore: close_sinks
+  static StreamController<RemoteMessage>? _onMessageStreamController;
+
   /// Returns a Stream that is called when an incoming FCM payload is received whilst
   /// the Flutter instance is in the foreground.
   ///
   /// To handle messages whilst the app is in the background or terminated,
   /// see [onBackgroundMessage].
-  // ignore: close_sinks, never closed
-  static final StreamController<RemoteMessage> onMessage =
-      StreamController<RemoteMessage>.broadcast();
+  static StreamController<RemoteMessage> get onMessage {
+    return _onMessageStreamController ??=
+        StreamController<RemoteMessage>.broadcast();
+  }
+
+  // ignore: close_sinks
+  static StreamController<RemoteMessage>? _onMessageOpenedAppStreamController;
 
   /// Returns a [Stream] that is called when a user presses a notification displayed
   /// via FCM.
@@ -77,9 +82,10 @@ abstract class FirebaseMessagingPlatform extends PlatformInterface {
   ///
   /// If your app is opened via a notification whilst the app is terminated,
   /// see [getInitialMessage].
-  // ignore: close_sinks, never closed
-  static final StreamController<RemoteMessage> onMessageOpenedApp =
-      StreamController<RemoteMessage>.broadcast();
+  static StreamController<RemoteMessage> get onMessageOpenedApp {
+    return _onMessageOpenedAppStreamController ??=
+        StreamController<RemoteMessage>.broadcast();
+  }
 
   static BackgroundMessageHandler? _onBackgroundMessageHandler;
 
@@ -152,7 +158,9 @@ abstract class FirebaseMessagingPlatform extends PlatformInterface {
   /// Removes access to an FCM token previously authorized with optional [senderId].
   ///
   /// Messages sent by the server to this token will fail.
-  Future<void> deleteToken() {
+  Future<void> deleteToken({
+    String? senderId,
+  }) {
     throw UnimplementedError('deleteToken() is not implemented');
   }
 
@@ -164,6 +172,7 @@ abstract class FirebaseMessagingPlatform extends PlatformInterface {
 
   /// Returns the default FCM token for this device and optionally [senderId].
   Future<String?> getToken({
+    String? senderId,
     String? vapidKey,
   }) {
     throw UnimplementedError('getToken() is not implemented');
@@ -179,12 +188,6 @@ abstract class FirebaseMessagingPlatform extends PlatformInterface {
   /// To request permissions, call [requestPermission].
   Future<NotificationSettings> getNotificationSettings() {
     throw UnimplementedError('getNotificationSettings() is not implemented');
-  }
-
-  /// isSupported() informs web users whether
-  /// the browser supports Firebase.Messaging
-  bool isSupported() {
-    throw UnimplementedError('isSupported() is not implemented');
   }
 
   /// Prompts the user for notification permissions.

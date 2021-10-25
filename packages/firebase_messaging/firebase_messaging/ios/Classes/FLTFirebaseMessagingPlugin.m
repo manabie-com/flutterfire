@@ -1,7 +1,6 @@
 // Copyright 2020 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-#import <TargetConditionals.h>
 
 #import <GoogleUtilities/GULAppDelegateSwizzler.h>
 #import <firebase_core/FLTFirebasePluginRegistry.h>
@@ -593,13 +592,18 @@ NSString *const kMessagingPresentationOptionsUserDefaults =
 
 - (void)messagingGetToken:(id)arguments withMethodCallResult:(FLTFirebaseMethodCallResult *)result {
   FIRMessaging *messaging = [FIRMessaging messaging];
-  [messaging tokenWithCompletion:^(NSString *_Nullable token, NSError *_Nullable error) {
-    if (error != nil) {
-      result.error(nil, nil, nil, error);
-    } else {
-      result.success(@{@"token" : token});
-    }
-  }];
+  NSString *senderId = arguments[@"senderId"];
+  if ([senderId isEqual:[NSNull null]]) {
+    senderId = [FIRApp defaultApp].options.GCMSenderID;
+  }
+  [messaging retrieveFCMTokenForSenderID:senderId
+                              completion:^(NSString *token, NSError *error) {
+                                if (error != nil) {
+                                  result.error(nil, nil, nil, error);
+                                } else {
+                                  result.success(@{@"token" : token});
+                                }
+                              }];
 }
 
 - (void)messagingGetAPNSToken:(id)arguments
@@ -615,13 +619,18 @@ NSString *const kMessagingPresentationOptionsUserDefaults =
 - (void)messagingDeleteToken:(id)arguments
         withMethodCallResult:(FLTFirebaseMethodCallResult *)result {
   FIRMessaging *messaging = [FIRMessaging messaging];
-  [messaging deleteTokenWithCompletion:^(NSError *_Nullable error) {
-    if (error != nil) {
-      result.error(nil, nil, nil, error);
-    } else {
-      result.success(nil);
-    }
-  }];
+  NSString *senderId = arguments[@"senderId"];
+  if ([senderId isEqual:[NSNull null]]) {
+    senderId = [FIRApp defaultApp].options.GCMSenderID;
+  }
+  [messaging deleteFCMTokenForSenderID:senderId
+                            completion:^(NSError *error) {
+                              if (error != nil) {
+                                result.error(nil, nil, nil, error);
+                              } else {
+                                result.success(nil);
+                              }
+                            }];
 }
 
 #pragma mark - FLTFirebasePlugin

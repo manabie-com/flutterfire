@@ -1,4 +1,3 @@
-// ignore_for_file: require_trailing_commas
 // Copyright 2020 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
@@ -107,8 +106,9 @@ class MockFirebaseMessaging extends Mock
   }
 
   @override
-  Future<void> deleteToken() {
-    return super.noSuchMethod(Invocation.method(#deleteToken, []),
+  Future<void> deleteToken({String? senderId}) {
+    return super.noSuchMethod(
+        Invocation.method(#deleteToken, [], {#senderId: senderId}),
         returnValue: Future<void>.value(),
         returnValueForMissingStub: Future<void>.value());
   }
@@ -121,9 +121,10 @@ class MockFirebaseMessaging extends Mock
   }
 
   @override
-  Future<String> getToken({String? vapidKey}) {
+  Future<String> getToken({String? senderId, String? vapidKey}) {
     return super.noSuchMethod(
-        Invocation.method(#getToken, [], {#vapidKey: vapidKey}),
+        Invocation.method(
+            #getToken, [], {#senderId: senderId, #vapidKey: vapidKey}),
         returnValue: Future<String>.value(''),
         returnValueForMissingStub: Future<String>.value(''));
   }

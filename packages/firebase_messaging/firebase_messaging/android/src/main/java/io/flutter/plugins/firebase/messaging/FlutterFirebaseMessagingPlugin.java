@@ -17,6 +17,8 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.Metadata;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.RemoteMessage;
 import io.flutter.embedding.engine.FlutterShellArgs;
@@ -29,6 +31,7 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.NewIntentListener;
+import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.plugins.firebase.core.FlutterFirebasePlugin;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,6 +50,14 @@ public class FlutterFirebaseMessagingPlugin extends BroadcastReceiver
   private Activity mainActivity;
   private RemoteMessage initialMessage;
 
+  @SuppressWarnings("unused")
+  public static void registerWith(Registrar registrar) {
+    FlutterFirebaseMessagingPlugin instance = new FlutterFirebaseMessagingPlugin();
+    instance.setActivity(registrar.activity());
+    registrar.addNewIntentListener(instance);
+    instance.initInstance(registrar.messenger());
+  }
+
   private void initInstance(BinaryMessenger messenger) {
     String channelName = "plugins.flutter.io/firebase_messaging";
     channel = new MethodChannel(messenger, channelName);
@@ -63,16 +74,23 @@ public class FlutterFirebaseMessagingPlugin extends BroadcastReceiver
     registerPlugin(channelName, this);
   }
 
+  private void onAttachedToEngine(Context context, BinaryMessenger binaryMessenger) {
+    initInstance(binaryMessenger);
+  }
+
+  private void setActivity(Activity flutterActivity) {
+    this.mainActivity = flutterActivity;
+  }
+
   @Override
   public void onAttachedToEngine(FlutterPluginBinding binding) {
-    initInstance(binding.getBinaryMessenger());
+    onAttachedToEngine(binding.getApplicationContext(), binding.getBinaryMessenger());
   }
 
   @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-    if (binding.getApplicationContext() != null) {
-      LocalBroadcastManager.getInstance(binding.getApplicationContext()).unregisterReceiver(this);
-    }
+    LocalBroadcastManager.getInstance(ContextHolder.getApplicationContext())
+        .unregisterReceiver(this);
   }
 
   @Override
@@ -124,20 +142,28 @@ public class FlutterFirebaseMessagingPlugin extends BroadcastReceiver
     }
   }
 
-  private Task<Void> deleteToken() {
+  private Task<Void> deleteToken(Map<String, Object> arguments) {
     return Tasks.call(
         cachedThreadPool,
         () -> {
-          Tasks.await(FirebaseMessaging.getInstance().deleteToken());
+          String senderId =
+              arguments.get("senderId") != null
+                  ? (String) arguments.get("senderId")
+                  : Metadata.getDefaultSenderId(FirebaseApp.getInstance());
+          FirebaseInstanceId.getInstance().deleteToken(senderId, "*");
           return null;
         });
   }
 
-  private Task<Map<String, Object>> getToken() {
+  private Task<Map<String, Object>> getToken(Map<String, Object> arguments) {
     return Tasks.call(
         cachedThreadPool,
         () -> {
-          String token = Tasks.await(FirebaseMessaging.getInstance().getToken());
+          String senderId =
+              arguments.get("senderId") != null
+                  ? (String) arguments.get("senderId")
+                  : Metadata.getDefaultSenderId(FirebaseApp.getInstance());
+          String token = FirebaseInstanceId.getInstance().getToken(senderId, "*");
           return new HashMap<String, Object>() {
             {
               put("token", token);
@@ -302,10 +328,10 @@ public class FlutterFirebaseMessagingPlugin extends BroadcastReceiver
         methodCallTask = getInitialMessage(call.arguments());
         break;
       case "Messaging#deleteToken":
-        methodCallTask = deleteToken();
+        methodCallTask = deleteToken(call.arguments());
         break;
       case "Messaging#getToken":
-        methodCallTask = getToken();
+        methodCallTask = getToken(call.arguments());
         break;
       case "Messaging#subscribeToTopic":
         methodCallTask = subscribeToTopic(call.arguments());

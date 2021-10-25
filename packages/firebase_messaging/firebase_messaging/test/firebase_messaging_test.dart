@@ -1,4 +1,3 @@
-// ignore_for_file: require_trailing_commas
 // Copyright 2020 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
@@ -19,7 +18,7 @@ import './mock.dart';
 
 void main() {
   setupFirebaseMessagingMocks();
-  FirebaseMessaging? messaging;
+  FirebaseMessaging messaging;
 
   group('$FirebaseMessaging', () {
     setUpAll(() async {
@@ -33,8 +32,8 @@ void main() {
       });
 
       test('returns the correct $FirebaseApp', () {
-        expect(messaging!.app, isA<FirebaseApp>());
-        expect(messaging!.app.name, defaultFirebaseAppName);
+        expect(messaging.app, isA<FirebaseApp>());
+        expect(messaging.app.name, defaultFirebaseAppName);
       });
     });
 
@@ -42,7 +41,7 @@ void main() {
       test('verify delegate method is called', () {
         // verify isAutoInitEnabled returns true
         when(kMockMessagingPlatform.isAutoInitEnabled).thenReturn(true);
-        var result = messaging!.isAutoInitEnabled;
+        var result = messaging.isAutoInitEnabled;
 
         expect(result, isA<bool>());
         expect(result, isTrue);
@@ -50,7 +49,7 @@ void main() {
 
         // verify isAutoInitEnabled returns false
         when(kMockMessagingPlatform.isAutoInitEnabled).thenReturn(false);
-        result = messaging!.isAutoInitEnabled;
+        result = messaging.isAutoInitEnabled;
 
         expect(result, isA<bool>());
         expect(result, isFalse);
@@ -68,7 +67,7 @@ void main() {
         final result = await messaging!.getInitialMessage();
 
         expect(result, isA<RemoteMessage>());
-        expect(result!.senderId, senderId);
+        expect(result.senderId, senderId);
 
         verify(kMockMessagingPlatform.getInitialMessage());
       });
@@ -79,7 +78,7 @@ void main() {
         when(kMockMessagingPlatform.deleteToken())
             .thenAnswer((_) => Future.value());
 
-        await messaging!.deleteToken();
+        await messaging.deleteToken();
 
         verify(kMockMessagingPlatform.deleteToken());
       });
@@ -91,7 +90,7 @@ void main() {
         when(kMockMessagingPlatform.getAPNSToken())
             .thenAnswer((_) => Future.value(apnsToken));
 
-        await messaging!.getAPNSToken();
+        await messaging.getAPNSToken();
 
         verify(kMockMessagingPlatform.getAPNSToken());
       });
@@ -102,7 +101,7 @@ void main() {
         when(kMockMessagingPlatform.getToken(vapidKey: anyNamed('vapidKey')))
             .thenAnswer((_) => Future.value(''));
 
-        await messaging!.getToken(vapidKey: vapidKey);
+        await messaging.getToken(vapidKey: vapidKey);
 
         verify(kMockMessagingPlatform.getToken(vapidKey: vapidKey));
       });

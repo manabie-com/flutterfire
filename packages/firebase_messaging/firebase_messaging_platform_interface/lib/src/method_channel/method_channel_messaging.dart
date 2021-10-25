@@ -1,4 +1,3 @@
-// ignore_for_file: require_trailing_commas
 // Copyright 2020, the Chromium project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
@@ -141,12 +140,6 @@ class MethodChannelFirebaseMessaging extends FirebaseMessagingPlatform {
     return _autoInitEnabled;
   }
 
-  /// Returns "true" as this API is used to inform users of web browser support
-  @override
-  bool isSupported() {
-    return true;
-  }
-
   @override
   Future<RemoteMessage?> getInitialMessage() async {
     try {
@@ -186,10 +179,12 @@ class MethodChannelFirebaseMessaging extends FirebaseMessagingPlatform {
   }
 
   @override
-  Future<void> deleteToken() async {
+  Future<void> deleteToken({
+    String? senderId,
+  }) async {
     try {
-      await channel
-          .invokeMapMethod('Messaging#deleteToken', {'appName': app.name});
+      await channel.invokeMapMethod(
+          'Messaging#deleteToken', {'appName': app.name, 'senderId': senderId});
     } catch (e) {
       throw convertPlatformException(e);
     }
@@ -216,12 +211,14 @@ class MethodChannelFirebaseMessaging extends FirebaseMessagingPlatform {
 
   @override
   Future<String?> getToken({
+    String? senderId,
     String? vapidKey, // not used yet; web only property
   }) async {
     try {
       Map<String, String?>? data =
           await channel.invokeMapMethod<String, String>('Messaging#getToken', {
         'appName': app.name,
+        'senderId': senderId,
       });
 
       return data?['token'];
